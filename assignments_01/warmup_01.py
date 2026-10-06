@@ -16,15 +16,41 @@ from dataclasses import dataclass
 # readings, and print the average and the hottest.
 # Comment: why does average() need to handle the empty case? What would
 # happen without that check?
-@dataclass
+
 class Thermometer:
     """
-    Docstring for Thermometer
+   Stores temperature readings in Celsius for one location.
     """
-    location: list[str]
 
+    def __init__(self, location, readings = None):
+        self.location = location
+        self.readings = readings if readings is not None else []
+
+    def __repr__(self):
+        return f"Thermometer(location='{self.location}', n_readings={len(self.readings)}, average={round(self.average(), 1)})"
+   
     def add(self,reading) -> None:
-        self.
+        self.readings.append(reading)
+
+    def average(self) -> float | None:
+        if not self.readings: # Conditional needed to prevent division by zero error when calculating the average of an empty list.
+            return None
+        return sum(self.readings) / len(self.readings)
+    
+    def hottest(self) -> float | None:
+        if not self.readings:
+            return None
+        return max(self.readings)
+
+My_thermometer = Thermometer("Charlotte")
+My_thermometer.add(20.0)
+My_thermometer.add(18.0)
+My_thermometer.add(19.0)
+My_thermometer.add(18.0)
+
+print(f"Average: {My_thermometer.average()}")
+print(f"Hottest: {My_thermometer.hottest()}")
+
 
 
 # Q2
@@ -35,6 +61,11 @@ class Thermometer:
 # Comment: what does Python display when a class has no __repr__, and why is
 # that unhelpful when debugging?
 
+A_thermometer = Thermometer("Atlanta", [22.0, 21.0, 23.0])
+print(My_thermometer)
+print([My_thermometer, A_thermometer])
+
+# __repr__ is useful for debugging because it provides a clear and concise representation of the object, including its location, number of readings, and average temperature. Without __repr__, Python would display a default representation that includes the object's memory address, which is not informative for understanding the object's state.
 
 # Q3
 # Write a class TemperatureAlert that holds a threshold (float, default 30.0)
