@@ -27,8 +27,9 @@ class Thermometer:
         self.readings = readings if readings is not None else []
 
     def __repr__(self):
-        return f"Thermometer(location='{self.location}', n_readings={len(self.readings)}, average={round(self.average(), 1)})"
-   
+        avg = self.average()
+        avg = round(avg, 1) if avg is not None else None
+        return f"Thermometer(location='{self.location}', n_readings={len(self.readings)}, average={avg})"
     def add(self,reading) -> None:
         self.readings.append(reading)
 
@@ -65,140 +66,271 @@ A_thermometer = Thermometer("Atlanta", [22.0, 21.0, 23.0])
 print(My_thermometer)
 print([My_thermometer, A_thermometer])
 
-# __repr__ is useful for debugging because it provides a clear and concise representation of the object, including its location, number of readings, and average temperature. Without __repr__, Python would display a default representation that includes the object's memory address, which is not informative for understanding the object's state.
+from dataclasses import dataclass, field, FrozenInstanceError
+
+import pytest
+from pydantic import BaseModel, Field, ValidationError, model_validator
+
+
+class Thermometer:
+    def __init__(self, location, readings=None):
+        self.location = location
+        self.readings = readings if readings is not None else []
+
+    def add(self, reading):
+        self.readings.append(reading)
+
+
+My_thermometer = Thermometer("Charlotte", [20.0, 18.0, 19.0, 18.0])
+
+
+# --- Classes ---
 
 # Q3
-# Write a class TemperatureAlert that holds a threshold (float, default 30.0)
-# and has one method:
-# - breaches(thermometer) -- returns a list of every reading in that
-#   Thermometer above the threshold.
-# Create two TemperatureAlert objects with different thresholds and run both
-# against the SAME Thermometer. Print both results.
-# Comment: why is the threshold stored on TemperatureAlert rather than passed
-# as an argument to breaches()? What advantage does that give you if you have
-# twenty thermometers to check?
+class TemperatureAlert:
+    """Flags readings above a threshold."""
+
+    def __init__(self, threshold=30.0):
+        self.threshold = threshold
+
+    def breaches(self, thermometer):
+        return [r for r in thermometer.readings if r > self.threshold]
+
+
+mild_alert = TemperatureAlert(18.5)
+hot_alert = TemperatureAlert()
+print(f"Above {mild_alert.threshold}: {mild_alert.breaches(My_thermometer)}")
+print(f"Above {hot_alert.threshold}: {hot_alert.breaches(My_thermometer)}")
+# The threshold is configuration that belongs to the alert, not to each check.
+# Store it once and every call to breaches() reuses it. With twenty
+# thermometers you loop over them calling alert.breaches(t), and the threshold
+# can't drift between calls or be mistyped on one of them. You can also keep
+# several alerts (mild, hot) side by side and pass them around as objects.
 
 
 # --- Dataclasses, Type Hints, and Docstrings ---
 
 # Q1
-# Rewrite this class as a dataclass. Add type hints to every field and a
-# docstring describing what it represents.
-#
-#   class Station:
-#       def __init__(self, station_id, name, latitude, longitude, elevation):
-#           self.station_id = station_id
-#           self.name = name
-#           self.latitude = latitude
-#           self.longitude = longitude
-#           self.elevation = elevation
-#
-# Create two Station objects with identical field values and print
-# station_a == station_b.
-# Comment: why is the result what it is, and what would it have been with the
-# original hand-written class?
+@dataclass
+class Station:
+    """A weather station and its location (degrees) and elevation (meters)."""
+    station_id: str
+    name: str
+    latitude: float
+    longitude: float
+    elevation: float
+
+
+station_a = Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0)
+station_b = Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0)
+print(station_a == station_b)
+# True. @dataclass generates __eq__, which compares the objects field by field.
+# The hand-written class has no __eq__, so == falls back to identity (like
+# Java's default equals()): two separate objects would be False even with
+# identical values.
 
 
 # Q2
-# Make Station frozen. Then:
-# 1. Show that assigning to a field now raises FrozenInstanceError (catch it
-#    and print the message -- do not let the script crash).
-# 2. Build a set containing three Station objects where two are identical,
-#    and print the length.
-# Comment: what does frozen=True give you besides immutability, and why is
-# that useful here?
+@dataclass(frozen=True)
+class Station:
+    """A weather station and its location (degrees) and elevation (meters)."""
+    station_id: str
+    name: str
+    latitude: float
+    longitude: float
+    elevation: float
+
+
+frozen_station = Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0)
+try:
+    frozen_station.elevation = 300.0
+except FrozenInstanceError as e:
+    print(f"FrozenInstanceError: {e}")
+
+stations = {
+    Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0),
+    Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0),
+    Station("RDU01", "Raleigh-Durham", 35.88, -78.79, 132.0),
+}
+print(len(stations))
+# 2. frozen=True also generates __hash__ (based on the fields), so stations can
+# go in a set or be dict keys, and equal stations collapse into one entry.
+# That's only safe because they're immutable: if a field could change after
+# the object went into a set, its hash would change and the set would lose it.
 
 
 # Q3
-# Write a dataclass StationBatch with:
-# - a region field (str)
-# - a stations field that is a list of Station, defaulting to empty
-# - a method add(station: Station) -> None
-# - a method highest(self) -> Station | None that returns the station with the
-#   greatest elevation, or None if the batch is empty
-# First try writing the default as  stations: list[Station] = []  , run it,
-# and paste the error you get into a comment. Then fix it properly and explain
-# in that comment why Python refuses the first version.
-# Give every method a type-hinted signature and a docstring.
+# First try:  stations: list[Station] = []
+#   ValueError: mutable default <class 'list'> for field stations is not
+#   allowed: use default_factory
+# A default value is created once, when the class is defined, so every
+# StationBatch would share the SAME list -- adding to one batch would add to
+# all of them. Python refuses it. field(default_factory=list) calls list()
+# for each new object, so every batch gets its own empty list.
+@dataclass
+class StationBatch:
+    """A group of stations in one region."""
+    region: str
+    stations: list[Station] = field(default_factory=list)
+
+    def add(self, station: Station) -> None:
+        """Add a station to the batch."""
+        self.stations.append(station)
+
+    def highest(self) -> Station | None:
+        """Return the station with the greatest elevation, or None if empty."""
+        if not self.stations:
+            return None
+        return max(self.stations, key=lambda s: s.elevation)
+
+
+batch = StationBatch("North Carolina")
+print(batch.highest())
+batch.add(Station("CLT01", "Charlotte Airport", 35.21, -80.94, 228.0))
+batch.add(Station("RDU01", "Raleigh-Durham", 35.88, -78.79, 132.0))
+batch.add(Station("AVL01", "Asheville", 35.43, -82.54, 652.0))
+print(batch.highest())
 
 
 # --- Pydantic ---
 
 # Q1
-# Write a Pydantic model Reading with these fields:
-#   station_id     str    at least 3 characters
-#   timestamp      str    required
-#   temperature_c  float  between -90 and 60
-#   humidity       float  between 0 and 100
-# Construct one valid Reading and print it.
+class Reading(BaseModel):
+    """One sensor reading."""
+    station_id: str = Field(min_length=3)
+    timestamp: str
+    temperature_c: float = Field(ge=-90, le=60)
+    humidity: float = Field(ge=0, le=100)
+
+
+reading = Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+                  temperature_c=18.5, humidity=55.0)
+print(reading)
 
 
 # Q2
-# Show three separate failures, each wrapped in try / except ValidationError
-# so the script keeps running. Print the error each time.
-# 1. A missing required field
-# 2. A temperature_c of 150.0
-# 3. A humidity of "very humid"
-# Then construct a Reading where temperature_c is passed as the STRING "21.5"
-# and humidity is passed as the INTEGER 40. Print the resulting object and the
-# type() of both fields.
-# Comment: why does Pydantic accept "21.5" but reject "very humid"? State the
-# rule in your own words.
+try:
+    Reading(station_id="CLT01", temperature_c=18.5, humidity=55.0)
+except ValidationError as e:
+    print(e)
+
+try:
+    Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+            temperature_c=150.0, humidity=55.0)
+except ValidationError as e:
+    print(e)
+
+try:
+    Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+            temperature_c=18.5, humidity="very humid")
+except ValidationError as e:
+    print(e)
+
+coerced = Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+                  temperature_c="21.5", humidity=40)
+print(coerced)
+print(type(coerced.temperature_c), type(coerced.humidity))
+# Pydantic converts a value to the declared type when the conversion is
+# unambiguous and loses nothing: "21.5" is clearly the number 21.5, and 40 is
+# exactly 40.0. "very humid" has no numeric meaning, so there's nothing to
+# convert it to and it's rejected.
 
 
 # Q3
-# Trigger several errors at once. In one try block, construct a Reading with a
-# too-short station_id, a missing timestamp, and a non-numeric temperature_c.
-# Catch the ValidationError and loop over e.errors(), printing the loc and msg
-# for each.
-# Comment: how many errors were reported, and why is reporting all of them at
-# once more useful than stopping at the first?
+try:
+    Reading(station_id="AB", temperature_c="hot", humidity=50.0)
+except ValidationError as e:
+    for err in e.errors():
+        print(err["loc"], err["msg"])
+# 3 errors. Pydantic checks every field before raising, so you see all the
+# problems at once and can fix them in one pass, instead of fix-rerun-repeat.
+# With data from an API, that also tells you everything that's wrong with a
+# bad record in a single log entry.
 
 
 # Q4
-# Add a model_validator(mode="after") to Reading that rejects any reading where
-# humidity is exactly 0.0 AND temperature_c is below -40 (a failed sensor, not
-# real weather).
-# Show that a valid reading still constructs, and that the bad combination
-# raises.
-# Comment: why can't this rule be expressed with Field constraints alone?
+class Reading(BaseModel):
+    """One sensor reading."""
+    station_id: str = Field(min_length=3)
+    timestamp: str
+    temperature_c: float = Field(ge=-90, le=60)
+    humidity: float = Field(ge=0, le=100)
+
+    @model_validator(mode="after")
+    def check_sensor_failure(self):
+        if self.humidity == 0.0 and self.temperature_c < -40:
+            raise ValueError("humidity 0.0 with temperature below -40 looks like a failed sensor")
+        return self
+
+
+print(Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+              temperature_c=-45.0, humidity=20.0))
+try:
+    Reading(station_id="CLT01", timestamp="2026-04-08T12:00",
+            temperature_c=-45.0, humidity=0.0)
+except ValidationError as e:
+    print(e)
+# Field constraints check one field at a time. -45 is a valid temperature and
+# 0.0 is a valid humidity on their own; only the COMBINATION is bad. A
+# model_validator(mode="after") runs once all fields are validated, so it can
+# look at several fields together.
 
 
 # --- pytest ---
-# Write these as real pytest tests named test_* in this file.
 
 # Q1
-# Write celsius_to_fahrenheit(celsius: float) -> float with a docstring.
-# Then write test_celsius_to_fahrenheit() asserting that:
-# - 0 C is 32 F
-# - 100 C is 212 F
-# - 37 C is approximately 98.6 F
-# The third one will fail with a plain ==. Make it pass with pytest.approx.
-# Comment: why was pytest.approx necessary?
+def celsius_to_fahrenheit(celsius: float) -> float:
+    """Convert a temperature from Celsius to Fahrenheit."""
+    return celsius * 9 / 5 + 32
+
+
+def test_celsius_to_fahrenheit():
+    assert celsius_to_fahrenheit(0) == 32
+    assert celsius_to_fahrenheit(100) == 212
+    assert celsius_to_fahrenheit(37) == pytest.approx(98.6)
+# 37 * 9 / 5 + 32 gives 98.60000000000001 because floats can't store most
+# decimals exactly, so a plain == fails. pytest.approx allows a tiny tolerance.
 
 
 # Q2
-# Write mean(values: list[float]) -> float that raises a ValueError with a
-# useful message when values is empty.
-# Write test_mean_of_empty_raises() using pytest.raises(ValueError, match=...)
-# to confirm both that the error is raised and that the message contains the
-# word you expect.
-# Comment: what would pytest.raises(ValueError) alone fail to catch that
-# match= catches?
+def mean(values: list[float]) -> float:
+    """Return the arithmetic mean of values. Raises ValueError if empty."""
+    if not values:
+        raise ValueError("cannot take the mean of an empty list")
+    return sum(values) / len(values)
+
+
+def test_mean_of_empty_raises():
+    with pytest.raises(ValueError, match="empty"):
+        mean([])
+# pytest.raises(ValueError) alone passes for ANY ValueError, including one
+# raised by a different bug in the function. match= also checks the message,
+# so the test only passes when it's the error we actually meant to raise.
 
 
 # Q3
-# Write test_mean_values() using @pytest.mark.parametrize to check at least
-# four input/output pairs for mean, including a single-element list and a
-# list containing negative numbers.
-# Run  pytest warmup_01.py -v  and paste the summary line into a comment.
-# Comment: why is one parametrized test with four cases better than four
-# nearly identical test functions?
+@pytest.mark.parametrize("values, expected", [
+    ([1.0, 2.0, 3.0], 2.0),
+    ([5.0], 5.0),
+    ([-2.0, -4.0], -3.0),
+    ([-1.0, 1.0, 3.0], 1.0),
+])
+def test_mean_values(values, expected):
+    assert mean(values) == pytest.approx(expected)
+# Summary line:
+# ============================== 6 passed in 0.03s ===============================
+# One parametrized test keeps the logic in one place: fixing or changing the
+# assertion fixes every case, adding a case is one line, and pytest still
+# reports each case separately so you can see exactly which input failed.
 
 
 # Q4
-# Deliberately break celsius_to_fahrenheit (e.g. change 9 / 5 to 9 / 4). Run
-# your test again and paste the failure output into a comment. Then fix the
-# function.
-# Comment: what specific values did pytest show you in the failure report, and
-# why is that more useful than a bare "assertion failed"?
+# With 9 / 5 changed to 9 / 4, the failure output was:
+#     >       assert celsius_to_fahrenheit(100) == 212
+#     E       assert 257.0 == 212
+#     E        +  where 257.0 = celsius_to_fahrenheit(100)
+#     FAILED warmup_01.py::test_celsius_to_fahrenheit - assert 257.0 == 212
+# pytest showed the actual result (257.0), the expected value (212), and the
+# call that produced it (celsius_to_fahrenheit(100)). Note 0 C still passed,
+# since 0 * anything + 32 is 32 -- the 100 C case is what caught the bug. A
+# bare "assertion failed" wouldn't say which input broke or by how much.
