@@ -90,3 +90,18 @@ print("is_rainy coefficient:", model_full.coef_[1])
 # Rain Flag helped R-squared went from .894 to .945. The is_rainy coefficient of -2.92 means a rainy day's max temp is expected to be 2.92 degrees lower than a dry day.
 
 #Q5
+
+full_pred = model_full.predict(x_test_full)
+
+plt.figure()
+plt.scatter(full_pred, y_test_full)
+plt.title("Predicted vs Actual")
+plt.xlabel("Predicted High")
+plt.ylabel("Actual High")
+plt.plot([y_test_full.min(), y_test_full.max()], [y_test_full.min(), y_test_full.max()], linestyle="--") 
+plt.savefig("outputs/predicted_vs_actual_warmup.png")
+plt.show()
+
+# Points above the actual high mean the model predicted a higher max temp than what actually occurred.
+# Points below the actual high mean the model predicted a lower max temp than what actually occurred. 
+# The closer the points are to the dashed line, the better the model's predictions are.
