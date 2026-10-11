@@ -1,6 +1,10 @@
 #-- scikit-learn API --#
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
 
 #Q1
 temp_min = np.array([1, 4, 8, 12, 16, 20]).reshape(-1, 1)
@@ -32,7 +36,22 @@ print("Reshaped shape:", x.reshape(-1, 1).shape)
 
 # --- Linear Regression ---
 
+rng = np.random.default_rng(42)
+num_days = 120
+temp_min = rng.uniform(-5, 22, num_days)
+is_rainy = rng.integers(0, 2, num_days).astype(float)
+temp_max = 1.0 * temp_min + 6 - 4 * is_rainy + rng.normal(0, 2, num_days)
+
 #Q1
+plt.scatter(temp_min, temp_max, c=is_rainy, cmap='coolwarm')
+plt.title("Daily High vs Low")
+plt.xlabel("Minimum Temperature")
+plt.ylabel("Maximum Temperature")
+plt.savefig("outputs/high_vs_low.png")
+plt.show()
+
+#Is Rainy lets us see the effect of rain on max temperature. If it rained it usually was less warm. Red rainy days sit below blue dry days. It adds additonal informatio so should
+# be a feature in the model.
 
 #Q2
 
