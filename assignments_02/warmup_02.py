@@ -50,12 +50,30 @@ plt.ylabel("Maximum Temperature")
 plt.savefig("outputs/high_vs_low.png")
 plt.show()
 
-#Is Rainy lets us see the effect of rain on max temperature. If it rained it usually was less warm. Red rainy days sit below blue dry days. It adds additonal informatio so should
+#Is Rainy lets us see the effect of rain on max temperature. If it rained it usually was less warm. Red rainy days sit below blue dry days. It adds additional information so should
 # be a feature in the model.
 
 #Q2
+shaped_temp_min = temp_min.reshape(-1, 1)
+x_train, x_test, y_train, y_test = train_test_split(shaped_temp_min, temp_max, test_size=0.2, random_state=42)
+
+print("Training set shape:", x_train.shape, y_train.shape)
+print("Test set shape:", x_test.shape, y_test.shape)
+
 
 #Q3
+lin_reg_model = LinearRegression()
+lin_reg_model.fit(x_train, y_train)
+
+print("Slope:", lin_reg_model.coef_[0])
+print("Model intercept:", lin_reg_model.intercept_)
+
+lin_reg_pred = lin_reg_model.predict(x_test)
+
+print("RMSE:", np.sqrt(mean_squared_error(y_test, lin_reg_pred)))
+print("R-squared:", lin_reg_model.score(x_test, y_test))
+
+# Slope is .94 which means for every 1 degree increase in min temp, the model estimates that the max temp increases by .94 degrees.
 
 #Q4
 
