@@ -14,8 +14,30 @@ predicted_new_max = model.predict(new_lows)
 
 print("Predicted maximum temperatures for new lows:", predicted_new_max)
 
-print("Low of 6 Model coefficients:", model.coef_[0])
+print("Slope:", model.coef_[0])
 print("Model intercept:", model.intercept_)
 
 print("Predicted high for low of 6:", predicted_new_max[0])
-print("Predicted intercept for low of 18:", predicted_new_max[1])
+print("Predicted high for low of 18:", predicted_new_max[1])
+
+
+#Q2
+x = np.array([10,20,30,40,50]) 
+
+print("Original shape:", x.shape)
+print("Reshaped shape:", x.reshape(-1, 1).shape)
+
+#Scikit-learn requires a 2D array for the input features, so we reshape the 1D array x into a 2D array with one column using x.reshape(-1, 1). 
+# This allows us to use it as input for machine learning models that expect a 2D array since a 1D array is ambiguous in terms of features and samples.
+
+# --- Linear Regression ---
+
+#Q1
+
+#Q2
+
+#Q3
+
+#Q4
+
+#Q5
