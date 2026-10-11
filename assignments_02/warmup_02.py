@@ -76,5 +76,17 @@ print("R-squared:", lin_reg_model.score(x_test, y_test))
 # Slope is .94 which means for every 1 degree increase in min temp, the model estimates that the max temp increases by .94 degrees.
 
 #Q4
+x_full = np.column_stack((temp_min, is_rainy))
+x_train_full, x_test_full, y_train_full, y_test_full = train_test_split(x_full, temp_max, test_size=0.2, random_state=42)
+
+model_full = LinearRegression()
+model_full.fit(x_train_full, y_train_full)
+
+print("Model_Full R-squared:", model_full.score(x_test_full, y_test_full))
+
+print("temp_min coefficient:", model_full.coef_[0])
+print("is_rainy coefficient:", model_full.coef_[1])
+
+# Rain Flag helped R-squared went from .894 to .945. The is_rainy coefficient of -2.92 means a rainy day's max temp is expected to be 2.92 degrees lower than a dry day.
 
 #Q5
