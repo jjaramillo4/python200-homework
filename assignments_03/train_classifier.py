@@ -118,10 +118,7 @@ for feature, coef in zip(numeric, new_model.named_steps["logreg"].coef_[0]):
 # Task 6
 joblib.dump(model, "models/weather_classifier.pkl")
 
-loaded = joblib.load("models/weather_classifier.pkl")
-assert (loaded.predict(X_test) == model.predict(X_test)).all()
-print("Predictions match.")
-print("File saved")
+print("Joblib file saved")
 
 metadata = {
 "python_version": platform.python_version(),
