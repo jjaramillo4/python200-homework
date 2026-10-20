@@ -33,7 +33,7 @@ X_test_scaled = scaler.transform(X_test)
 
 print(X_train_scaled.mean(axis=0))
 
-# Because the scaler on X_train only prevents data leakage from the test into the training process. 
+# Because the scaler is trained on X_train only prevents data leakage from the test into the training process. 
 
 # Question 2
 encoder = OneHotEncoder(sparse_output=False)
@@ -44,7 +44,7 @@ print(season_col.shape)
 
 print(encoder.get_feature_names_out())
 
-# Season turned into 4 columns because there are 4 distinct categories eaching getting its own binary indicator column. 
+# Season turned into 4 columns because there are 4 distinct categories each getting its own binary indicator column. 
 
 # Question 3
 
@@ -119,7 +119,7 @@ Scaled_KNN_pipeline.fit(X_train, y_train)
 
 print("Scaled Accuracy:", Scaled_KNN_pipeline.score(X_test, y_test))
 
-# Yes scaling helped. It made the model more accurate. This helps us because features with longer distances would drown out smaller features. 
+# Yes scaling helped. It made the model more accurate. This helps us because features with longer range would drown out smaller features. 
 
 # --- Logistic Regression ---
 
@@ -144,14 +144,15 @@ logreg = model.named_steps["logreg"]
 for feature, coef in zip(numeric, model.named_steps["logreg"].coef_[0]):
     print(f"{feature}:{coef:.4f}")
 
-# Wind speed is the feature that pushes most toward skip. I would assume it was precipitation, which is also a skip but wind speed affects it more. 
+# Wind speed is the feature that pushes most towards skip. I would assume it was precipitation, which is also a skip but wind speed affects it more. 
+#Both have negative coefficients. 
 
 # Question 3
 probs_good = model.predict_proba(X_test[:5])[:,1].round(2)
 
 print(probs_good)
 
-# A Probabability of .5 means its a toss up 50/50 that its good to run. 
+# A Probability of .5 means its a toss up 50/50 that its good to run. 
 
 # --- Evaluation ---
 
@@ -165,17 +166,17 @@ plt.savefig("outputs/logreg_confusion_matrix.png")
 plt.close()
 
 #  how many false positives and how many false negatives did the model make, and which kind of error would matter more for a running app?
-# 9 false positives and 7 false negatives. For running, I would assume false positive.
+# 9 false positives and 7 false negatives. For running, I would assume false positive since heading out to run on a rainly day would be worse.
 
 # --- joblib ---
 
 # Question 1
 
-joblib.dump(model, "models/warmup_model.pk1")
+joblib.dump(model, "models/warmup_model.pkl")
 
 loaded = joblib.load("models/warmup_model.pkl")
 assert (loaded.predict(X_test) == model.predict(X_test)).all()
 print("Predictions match.")
 
 
-#  The data would be corrupted and inaccurate because it would be unscaled. 
+#  The data would be inaccurate because it would be unscaled. 
