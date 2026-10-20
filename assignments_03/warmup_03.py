@@ -94,41 +94,88 @@ for k in [1, 3, 5, 7, 9, 11, 15, 21]:
         ("scaler", StandardScaler()),
         ("knn", KNeighborsClassifier(n_neighbors=k))
     ])
+    scores = cross_val_score(loop_Pipeline, X_train, y_train, cv=5)
+    mean_score = scores.mean()
+    print(k, mean_score)
 
-scores = cross_val_score(loop_Pipeline, X_train, y_train, cv=5)
-mean_score = scores.mean()
-print(k, mean_score)
-
-#  naming the k you would choose and why.
+#  I would use use 11 since it has the highest mean cross-validation accuracy. 
 
 # Question 3
 
-# did scaling help, and why would scaling matter for a distance-based model?
+No_Scale_KNN =  Pipeline([
+    ("knn", KNeighborsClassifier(n_neighbors=5))
+])
+
+No_Scale_KNN.fit(X_train, y_train)
+
+print("No Scale Accuracy:", No_Scale_KNN.score(X_test, y_test))
+
+Scaled_KNN_pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("knn", KNeighborsClassifier(n_neighbors=5))
+])
+
+Scaled_KNN_pipeline.fit(X_train, y_train)
+
+print("Scaled Accuracy:", Scaled_KNN_pipeline.score(X_test, y_test))
+
+# Yes scaling helped. It made the model more accurate. This helps us because features with longer distances would drown out smaller features. 
 
 # --- Logistic Regression ---
 
 # Question 1
 
+model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("logreg", LogisticRegression(max_iter=1000)),
+])
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("Accuracy: ", accuracy_score(y_test, y_pred))
+print("Precision: ", precision_score(y_test, y_pred))
+print("Recall: ", recall_score(y_test, y_pred))
+print("F1 Score: ", f1_score(y_test, y_pred))
+
 # Question 2
 
-# which features push most strongly toward "skip," and does that match your intuition about running weather?
+logreg = model.named_steps["logreg"]
+for feature, coef in zip(numeric, model.named_steps["logreg"].coef_[0]):
+    print(f"{feature}:{coef:.4f}")
+
+# Wind speed is the feature that pushes most toward skip. I would assume it was precipitation, which is also a skip but wind speed affects it more. 
 
 # Question 3
+probs_good = model.predict_proba(X_test[:5])[:,1].round(2)
 
-# what does a probability near 0.5 tell you about the model's confidence for that day?
+print(probs_good)
+
+# A Probabability of .5 means its a toss up 50/50 that its good to run. 
 
 # --- Evaluation ---
 
 # Question 1
 
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels =["skip", "good"])
+disp.plot()
+
+plt.savefig("outputs/logreg_confusion_matrix.png")
+plt.close()
+
 #  how many false positives and how many false negatives did the model make, and which kind of error would matter more for a running app?
+# 9 false positives and 7 false negatives. For running, I would assume false positive.
 
 # --- joblib ---
 
 # Question 1
 
+joblib.dump(model, "models/warmup_model.pk1")
+
 loaded = joblib.load("models/warmup_model.pkl")
-assert (loaded.predict(X_test) == pipeline.predict(X_test)).all()
+assert (loaded.predict(X_test) == model.predict(X_test)).all()
 print("Predictions match.")
 
-#  what would go wrong if you had saved only the LogisticRegression step without the scaler, then called .predict() on raw data?
+
+#  The data would be corrupted and inaccurate because it would be unscaled. 
