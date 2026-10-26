@@ -1,6 +1,7 @@
 from pathlib import Path
 import joblib
 import json
+import pytest
 from dataclasses import dataclass
 
 # Warmup Question 1
@@ -48,3 +49,20 @@ print(day2.summary())
 # I get __init__ and __repr__ without creating it. 
 
 # Warmup Question 3
+def parse_temperature(text:str) -> float:
+
+    try:
+       temp = float(text)
+    except ValueError:
+      raise ValueError(f"{text}. is not a valid temperature.")
+    return temp
+
+def test_parse_temperature_valid():
+    assert parse_temperature("24.1") == pytest.approx(24.1)
+
+def test_parse_temperature_bad_input_raises():
+    with pytest.raises(ValueError, match="temperature"):
+        parse_temperature("hot")
+
+# It checks that the function returns the correct number. The second function fails on purpose with a clear purpose.
+# Without match, pytest.raises(ValueError) would pass on any ValueError, even one from a different bug with a different message.
