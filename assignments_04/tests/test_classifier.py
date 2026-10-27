@@ -26,3 +26,19 @@ def classifier(tmp_path):
     path = tmp_path / "model.pkl"
     joblib.dump(model, path)
     return WeatherClassifier(path)
+
+@pytest.mark.parametrize("day, expected_label", [
+    (GOOD_DAY, "good"),
+    (BAD_DAY, "skip"),
+])
+def test_good_label(classifier, day, expected_label):
+
+def test_empty_list_returns_empty(classifier):
+
+def test_probability_in_range:
+
+def test_three_days_in_order:
+
+def test_missing_features_raises:
+
+def test_missing_file_raises:
