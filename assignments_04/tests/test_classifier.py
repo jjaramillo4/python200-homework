@@ -39,16 +39,26 @@ def test_good_label(classifier, day, expected_label):
 def test_empty_list_returns_empty(classifier):
     assert classifier.predict([]) == []
 
-def test_probability_in_range:
-    preds = classifier.predict([GOOD_DAY, BAD_DAY, GOOD_DAY])
+def test_probability_in_range(classifier):
+    preds = classifier.predict([GOOD_DAY])
     assert 0 <= preds[0].probability <= 1
 
-def test_three_days_in_order:
+def test_three_days_in_order(classifier):
+    pred_in_order = classifier.predict([GOOD_DAY, BAD_DAY, GOOD_DAY])
+    expected = ["good", "skip", "good"]
+    for i in range(len(expected)):
+        assert pred_in_order[i].label == expected[i]
 
-def test_missing_features_raises:
+# Break check: misspelling "missing" in classifier.py's error message made this test fail.
+def test_missing_features_raises(classifier):
     bad_day_missing = GOOD_DAY.copy()
     del bad_day_missing["temperature_2m_max"]
+    # match is a regex, not plain text: matching the full message failed because
+    # [ ] in "['temperature_2m_max']" means "any one of these characters".
+    # Matching only the fixed part of the message avoids special characters.
+    with pytest.raises(ValueError, match="missing required features:"):
+        classifier.predict([bad_day_missing])
+    
+def test_missing_file_raises():
     with pytest.raises(FileNotFoundError, match="No such model exists"):
         WeatherClassifier("nonexistent_path.pkl")
-
-def test_missing_file_raises:
