@@ -32,13 +32,23 @@ def classifier(tmp_path):
     (BAD_DAY, "skip"),
 ])
 def test_good_label(classifier, day, expected_label):
+    result = classifier.predict([day])
+    assert len(result) == 1
+    assert result[0].label == expected_label
 
 def test_empty_list_returns_empty(classifier):
+    assert classifier.predict([]) == []
 
 def test_probability_in_range:
+    preds = classifier.predict([GOOD_DAY, BAD_DAY, GOOD_DAY])
+    assert 0 <= preds[0].probability <= 1
 
 def test_three_days_in_order:
 
 def test_missing_features_raises:
+    bad_day_missing = GOOD_DAY.copy()
+    del bad_day_missing["temperature_2m_max"]
+    with pytest.raises(FileNotFoundError, match="No such model exists"):
+        WeatherClassifier("nonexistent_path.pkl")
 
 def test_missing_file_raises:

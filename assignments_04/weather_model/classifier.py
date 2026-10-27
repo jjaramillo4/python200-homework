@@ -51,4 +51,3 @@ class WeatherClassifier:
             Prediction("good" if int(label) == 1 else "skip", float(prob))
             for label, prob in zip(labels, probabilities)
         ]
-# Task 3
