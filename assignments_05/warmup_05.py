@@ -268,6 +268,10 @@ response = client.chat.completions.create(
 
 print(f"Ollama Question 1 - OpenAI Response: {response.choices[0].message.content}")
 
+# Differences: The OpenAI response was more detailed. It named the underlying techniques (deep learning, neural networks)
+# and gave more example tasks, while the local qwen3 answer stayed general. qwen3 also printed a "Thinking..." block
+# before its answer, which gpt-4o-mini did not.
+
 # Advantages: Local models can offer better privacy and control over data, as they don't rely on external servers.
 # They can also be optimized for specific tasks or domains, potentially improving performance, and run locally on your pc.
 
