@@ -41,7 +41,7 @@ for temp in temperatures:
     print(f"Response: {loop_response.choices[0].message.content}")
 
 # Temp of 0 gave answers that were predictable using the word Data. I would use it if I needed a consistent mostly reproducible answer.
-# TODO: the question asks how the outputs DIFFER -- add a line on what 0.7 and 1.5 produced.
+# - 0.7 gave some variety, 1.5 gave different, more unusual names each run.
 
 # API Question 3
 
