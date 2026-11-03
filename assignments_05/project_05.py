@@ -94,6 +94,10 @@ for bullet in new_bullets:
     print(f"Original: {bullet['original']}")
     print(f"Improved: {bullet['improved']}")
 
+# - Weak: vague verbs ("helped", "made", "worked"), no results or details
+# - Model used stronger verbs (resolved, compiled, collaborated) and added outcomes
+# - It sometimes invented facts like percentages, so review is needed
+
 # Task 3
 
 def generate_cover_letter(job_title: str, background: str) -> str:
